@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
+use App\Models\Brandimg;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Intervention\Image\Facades\Image;
 
 class ProdukController extends Controller
 {
@@ -34,7 +38,41 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
-        
+
+        $request->validate([
+            'namaProduk' => 'required|unique:brands,produk',
+            'imgProduk' => 'required|mimes:png,jpg,jpeg'
+        ]);
+
+        $produk = new Brand;
+
+        $produk->produk = $request->namaProduk;
+        $produk->user_id = Auth::user()->id;
+
+        $produk->save();
+
+        $imgProduk = Brand::where('produk',$request->namaProduk)->first();
+
+        $img = new Brandimg;
+
+        $i = 0;
+
+        dd($request->imgProduk);
+
+        foreach($request->imgProduk as $imgs){
+
+            $imgname = $request->namaProduk.uniqid().$imgs->extension();
+            Image::make($imgs)
+                    ->resize(200,200)
+                    ->save('public/img/produk/'.$imgname,60);
+
+            $img->img = $imgname;
+            $img->brand_id = $imgProduk->id;
+
+        }
+
+        return redirect()->route('produk')->with('scs','tambah data sukses');
+
     }
 
     /**
